@@ -1,0 +1,54 @@
+\documentclass[a4paper]{article}
+
+\usepackage[top=1in, bottom=1.25in, left=1.25in, right=1.25in]{geometry}
+
+\title{Google Drive Encryption - Project proposal for CSE 207}
+\author{Sunil Raiyani, Sahil Agarwal}
+\date{November 10, 2015}
+
+\begin{document}
+
+\maketitle
+
+\section{Idea and Motivation}
+
+Google Drive is a secure cloud storage and file backup service for photos, videos, files etc. It allows you to access these files from anywhere, using any compatible device. Although Google ensures privacy of the data in the files that are stored on the drive, there is concern about the fact that the data is still not private as far as Google, itself, is concerned. 
+
+We propose the development of an add-on for Google Drive which will enable users to encrypt their files before storing them on the server so that data privacy is maintained with respect to the cloud service provider (Google Inc.) as well. The users can retrieve these files from the drive by downloading them. The add-on will decrypt the downloaded file and return the original file to the user. 
+
+\textit{Ensuring privacy of data stored on the cloud, from the cloud service provider itself, is the motivation behind our proposed project.} 
+
+\section{Security goals and features}
+
+The desired functionality here is that:
+\begin{itemize}
+\item It should provide encryption (and decryption) on a per-file basis
+\item It should be \textit{easy to use}. The interface should be the normal Google drive plugin with a couple of extra buttons. The user should not be prompted to enter a password each time.
+\item \textit{Security}: Secure key storage and symmetric encryption should uphold privacy of user's data.
+\end{itemize}
+
+
+\section{Implementation outline}
+
+\textbf{Initialization}
+\begin{itemize}
+\vspace{-2mm}
+\item Generate a private key when a file has to be encrypted and uploaded to the drive for the first time. 
+\item Encrypt the key using system password and store the encrypted key in the system. This will be used for encryption and decryption. \\
+\end{itemize}
+\vspace{-5mm}
+\noindent \textbf{Upload} 
+\begin{itemize}\vspace{-2mm}
+\item
+Encrypt the file that has to be uploaded using AES block cipher in CTR (random IV) mode.
+\item Use Drive REST API to upload file to drive(in a folder named 'Encrypted Files'). Add an extension (eg. “.enc”) to distinguish from non-encrypted files \\
+\end{itemize}
+\vspace{-5mm}
+\noindent \textbf{Download}
+\begin{itemize}\vspace{-2mm}
+
+\item Download encrypted file from drive using Drive REST API
+\item Decrypt the downloaded file (if it has been originally encrypted using our software) and return the decrypted file to the user. \\
+\end{itemize}
+\end{document}
+
