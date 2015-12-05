@@ -2,6 +2,7 @@ from __future__ import print_function
 import httplib2
 import os
 import apiclient
+import encrypt_module
 
 from apiclient import discovery
 from apiclient import errors
@@ -52,7 +53,7 @@ def get_credentials():
 
 def upload_file(service, title, mime_type, parent_id, filename):
     if filename:
-        media_body = MediaFileUpload(filename, resumable=True)
+        media_body = MediaFileUpload(filename, mimetype=mime_type, resumable=True)
     else:
         media_body=None
         
@@ -169,8 +170,12 @@ class UploadDialog(QtGui.QMainWindow):
 
     def handleUpload(self):
         filepath=str(self.ui.address.displayText())
-        filename=filepath.split('/')[-1]
-        fileid=upload_file(service,filename,'*/*',folderID,filepath)
+        key= encrypt_module.readfile('key.inc', 'rb')
+        plaintext = encrypt_module.readfile(filepath, 'rb')
+        e_filepath=encrypt_module.encrypt(plaintext,filepath,key)
+        e_filename=e_filepath.split('/')[-1]
+        fileid=upload_file(service,e_filename,'application/octet-stream',folderID,e_filepath)
+        os.remove(e_filepath)
         #QtCore.QCoreApplication.instance().quit()
 
 class DownloadDialog(QtGui.QMainWindow):
@@ -181,6 +186,7 @@ class DownloadDialog(QtGui.QMainWindow):
         self.ui.downloadButton.clicked.connect(self.handleDownload)
         files=get_files_in_folder(service,folderID)
         filenameList=[file['title'] for file in files]
+        self.ui.fileList.clear()
         self.ui.fileList.addItems(filenameList)
 
     def handleDownload(self):
@@ -196,7 +202,9 @@ class DownloadDialog(QtGui.QMainWindow):
             fw=open('EncryptedDownloads/'+filename ,'wb')
             download_file(service,fileID,fw)
             fw.close()
-        
+            key= encrypt_module.readfile('key.inc', 'rb')
+            encrypt_module.decrypt(key,'EncryptedDownloads/'+filename)
+            os.remove('EncryptedDownloads/'+filename)
 def main():
     app = QtGui.QApplication(sys.argv)
     myapp = LoadPage()
