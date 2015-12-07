@@ -51,7 +51,7 @@ class Ui_DownloadDialog(object):
         QtCore.QMetaObject.connectSlotsByName(DownloadDialog)
 
     def retranslateUi(self, DownloadDialog):
-        DownloadDialog.setWindowTitle(_translate("DownloadDialog", "Dialog", None))
+        DownloadDialog.setWindowTitle(_translate("DownloadDialog", "Download", None))
         self.downloadButton.setText(_translate("DownloadDialog", "Download", None))
         self.browseButton.setText(_translate("DownloadDialog", "Browse", None))
 

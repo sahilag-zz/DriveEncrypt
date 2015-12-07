@@ -34,7 +34,7 @@ class Ui_UploadDialog(object):
         self.browseButton.setGeometry(QtCore.QRect(330, 80, 75, 23))
         self.browseButton.setObjectName(_fromUtf8("browseButton"))
         self.uploadButton = QtGui.QPushButton(UploadDialog)
-        self.uploadButton.setGeometry(QtCore.QRect(150, 140, 101, 31))
+        self.uploadButton.setGeometry(QtCore.QRect(150, 140, 131, 31))
         self.uploadButton.setObjectName(_fromUtf8("uploadButton"))
 
         self.retranslateUi(UploadDialog)

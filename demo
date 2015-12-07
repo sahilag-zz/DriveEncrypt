@@ -1,0 +1,13 @@
+demo:
+
+- choose file to upload (not from desktop)
+- upload it
+- show in drive
+- simple download encfile and show that its encrypted
+- delete file from comp
+- download file to desktop 
+- show file
+
+- modify encfile on drive
+- download file
+- show error

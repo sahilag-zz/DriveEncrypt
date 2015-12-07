@@ -64,6 +64,6 @@ def decrypt(key, encfilename, chunksize = 1024):
 		
 		outfile.close()			
 		if (tag != mac.digest()):	
-			f.open(outfilename, 'wb')
+			f=open(outfilename, 'wb')
 			f.write("An error occured in processing your file...")
 			f.close()
