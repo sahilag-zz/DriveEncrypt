@@ -14,7 +14,7 @@ def encrypt(key, filename, chunksize = 1024):
 	# counter for symmetric encryption in CTR mode
 	ctr = Crypto.Util.Counter.new(128, initial_value=long(iv.encode("hex"), 16))
 	cipher = AES.new(key1, AES.MODE_CTR, counter = ctr)
-	mac = HMAC.new(key, digestmod = SHA256)
+	mac = HMAC.new(key2, digestmod = SHA256)
 	mac.update(iv)
 	with open(filename, 'rb') as infile:
 		with open(encfilename, 'wb') as outfile:
@@ -49,7 +49,7 @@ def decrypt(key, encfilename, chunksize = 1024):
 		iv = infile.read(16)
 		ctr = Crypto.Util.Counter.new(128, initial_value=long(iv.encode("hex"), 16))
 		obj = AES.new(key1, AES.MODE_CTR, counter = ctr)
-		mac = HMAC.new(key, digestmod = SHA256)
+		mac = HMAC.new(key2, digestmod = SHA256)
 		mac.update(iv)
 		with open(outfilename, 'wb') as outfile:
 		
