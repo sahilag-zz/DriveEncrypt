@@ -10,6 +10,8 @@ from apiclient import http
 from apiclient.http import MediaFileUpload
 from apiclient.http import MediaIoBaseDownload
 
+from Crypto.Hash import SHA256
+
 import oauth2client
 from oauth2client import client
 from oauth2client import tools
@@ -26,7 +28,7 @@ from PyQt4 import QtCore, QtGui
 from encryptor_ui import Ui_LoadPage
 from upload_ui import Ui_UploadDialog
 from download_ui import Ui_DownloadDialog
-
+from keygen_ui import Ui_Password_Dialog
 
 SCOPES = 'https://www.googleapis.com/auth/drive'
 CLIENT_SECRET_FILE = 'client_secret.json'
@@ -51,6 +53,16 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
+def get_key():
+    home_dir=os.path.expanduser('~')
+    key_dir=os.path.join(home_dir,'.key')
+    key_path=os.path.join(key_dir,'key.inc')
+    f_key=open(key_path,'rb')
+    key=f_key.read()
+    f_key.close()
+    return key
+
+    
 def upload_file(service, title, mime_type, parent_id, filename):
     if filename:
         media_body = MediaFileUpload(filename, mimetype=mime_type, resumable=True)
@@ -112,6 +124,7 @@ def get_files_in_folder(service, folder_id):
     return files     
 
 credentials = get_credentials()
+
 http = credentials.authorize(httplib2.Http())      
 service = discovery.build('drive', 'v2',http=http)
 
@@ -145,16 +158,44 @@ class LoadPage(QtGui.QMainWindow):
         self.ui.downloadButton.clicked.connect(self.handleDownload)
         self.nextPageU=None
         self.nextPageD=None
+        home_dir=os.path.expanduser('~')
+        key_dir=os.path.join(home_dir,'.key')
+        key_path=os.path.join(key_dir,'key.inc')
+        if not os.path.exists(key_path):
+            if not os.path.exists(key_dir):
+                os.makedirs(key_dir)
+            key_file=open(key_path,'wb')
+            key_file.close()
+            KeygenDialog(self).show()            
 
     def handleUpload(self):
-        if self.nextPageU is None:
-            self.nextPageU = UploadDialog(self)
+        #if self.nextPageU is None:
+        self.nextPageU = UploadDialog(self)
         self.nextPageU.show()
 
     def handleDownload(self):
-        if self.nextPageD is None:
-            self.nextPageD = DownloadDialog(self)
+        #if self.nextPageD is None:
+        self.nextPageD = DownloadDialog(self)
         self.nextPageD.show()
+
+class KeygenDialog(QtGui.QMainWindow):
+    def __init__(self,parent=None):
+        QtGui.QWidget.__init__(self,parent)
+        self.ui=Ui_Password_Dialog()
+        self.ui.setupUi(self)
+        self.ui.setkeyButton.clicked.connect(self.handleKeygen)
+
+    def handleKeygen(self):
+        password=str(self.ui.lineEdit.displayText())
+        h=SHA256.new()
+        h.update(password)
+        home_dir=os.path.expanduser('~')
+        key_dir=os.path.join(home_dir,'.key')
+        key_path=os.path.join(key_dir,'key.inc')
+        f_key=open(key_path,'wb')
+        f_key.write(h.digest())
+        f_key.close()
+        self.close()        
         
 class UploadDialog(QtGui.QMainWindow):
     def __init__(self,parent=LoadPage):
@@ -170,13 +211,12 @@ class UploadDialog(QtGui.QMainWindow):
 
     def handleUpload(self):
         filepath=str(self.ui.address.displayText())
-        key= encrypt_module.readfile('key.inc', 'rb')
-        plaintext = encrypt_module.readfile(filepath, 'rb')
-        e_filepath=encrypt_module.encrypt(plaintext,filepath,key)
+        key= get_key()
+        e_filepath=encrypt_module.encrypt(key,filepath)
         e_filename=e_filepath.split('/')[-1]
         fileid=upload_file(service,e_filename,'application/octet-stream',folderID,e_filepath)
         os.remove(e_filepath)
-        #QtCore.QCoreApplication.instance().quit()
+        self.close()
 
 class DownloadDialog(QtGui.QMainWindow):
     def __init__(self,parent=LoadPage):
@@ -184,10 +224,15 @@ class DownloadDialog(QtGui.QMainWindow):
         self.ui=Ui_DownloadDialog()
         self.ui.setupUi(self)
         self.ui.downloadButton.clicked.connect(self.handleDownload)
+        self.ui.browseButton.clicked.connect(self.handleBrowse)
         files=get_files_in_folder(service,folderID)
-        filenameList=[file['title'] for file in files]
+        filenameList=[file['title'] for file in files if file['explicitlyTrashed']==False]
         self.ui.fileList.clear()
         self.ui.fileList.addItems(filenameList)
+
+    def handleBrowse(self):
+        diraddress=QtGui.QFileDialog.getExistingDirectory(self, 'Select Destination Directory')
+        self.ui.address.setText(diraddress)
 
     def handleDownload(self):
         filename=str(self.ui.fileList.currentItem().text())
@@ -199,12 +244,16 @@ class DownloadDialog(QtGui.QMainWindow):
             else:
                 fileID=None
         if fileID:
-            fw=open('EncryptedDownloads/'+filename ,'wb')
+            dirpath=str(self.ui.address.displayText())
+            fw=open(dirpath+'/'+filename ,'wb')
             download_file(service,fileID,fw)
             fw.close()
-            key= encrypt_module.readfile('key.inc', 'rb')
-            encrypt_module.decrypt(key,'EncryptedDownloads/'+filename)
-            os.remove('EncryptedDownloads/'+filename)
+            key= get_key()
+            encrypt_module.decrypt(key,dirpath+'/'+filename)
+            os.remove(dirpath+'/'+filename)
+        self.close()
+
+
 def main():
     app = QtGui.QApplication(sys.argv)
     myapp = LoadPage()
